@@ -5,7 +5,7 @@ import Scalaz._
 
 class TiramisuException(e: String) extends Exception(e)
 
-class QueryAdditionException(e: String) extends TiramisuException(e)
+class DuplicatedParameterException(e: String) extends TiramisuException(e)
 class InvalidParameterException(e: String) extends TiramisuException(e)
 class UnusedParameterException(e: String) extends TiramisuException(e)
 
@@ -15,12 +15,12 @@ class Query(val sql: String, val params: Map[String,Any]) {
     val paramIntersection = params.keySet & q.params.keySet
     val duplicatedParameters = paramIntersection.filter( k => params(k) != q.params(k) )
 
-    if (!(params.keySet ++ q.params.keySet).forall(p => parameterIsValid(p))) { //Make sure all parameters valid
-      throw new InvalidParameterException("Invalid parameters: " + (params.keySet ++ q.params.keySet).filter(p => !parameterIsValid(p)) )
+    if (!(params.keySet ++ q.params.keySet).forall(p => Query.parameterIsValid(p))) { //Make sure all parameters valid
+      throw new InvalidParameterException("Invalid parameters: " + (params.keySet ++ q.params.keySet).filter(p => !Query.parameterIsValid(p)) )
     }
 
     if (!duplicatedParameters.isEmpty) { //We can't combine queries where both have the same parameter key, but the value is different
-      throw new QueryAdditionException("Cannot combine queries, contain duplicated parameters for which the values differ: " + duplicatedParameters.map(k => (params(k), q.params(k))))
+      throw new DuplicatedParameterException("Cannot combine queries, contain duplicated parameters for which the values differ: " + duplicatedParameters.map(k => (params(k), q.params(k))))
     }
     new Query(sql + q.sql, params ++ q.params)
   }
@@ -31,10 +31,11 @@ class Query(val sql: String, val params: Map[String,Any]) {
       case _ => false
     }
   }
+}
 
-  private val parameterRegex = java.util.regex.Pattern.compile("^[\\w]+$")
-  private def parameterIsValid(p: String) = parameterRegex.matcher(p).matches()
-
+object Query {
+  private val parameterRegex = java.util.regex.Pattern.compile("^[\\w]+\\z")
+  def parameterIsValid(p: String) = parameterRegex.matcher(p).matches()
 }
 
 object Syntax {

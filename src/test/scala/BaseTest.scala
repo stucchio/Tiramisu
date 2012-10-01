@@ -21,10 +21,14 @@ object Generators {
 
 }
 
-object QuerySpecificationMonoid extends Properties("MonoidLaws") {
+object QuerySpecificationMonoid extends Properties("Query.MonoidLaws") {
   import Generators._
   property("equality") = forAll(legitimateString, alphaMap) { (a: String, b: Map[String,String]) => {
     a.sqlP(b) == a.sqlP(b)
+  } }
+
+  property("zero") = forAll(legitimateString, alphaMap) { (a: String, b: Map[String,String]) => {
+    a.sqlP(b) == (a.sqlP(b) |+| "".sql)
   } }
 
   property("associativity") = forAll(genQuery, genQuery, genQuery) { (a: Query, b: Query, c: Query) => {
@@ -32,7 +36,7 @@ object QuerySpecificationMonoid extends Properties("MonoidLaws") {
   } }
 }
 
-object QuerySpecification extends Properties("QueryParams") {
+object QuerySpecification extends Properties("Query.NormalUse") {
   import Prop.forAll
 
   import Generators._
@@ -60,6 +64,19 @@ object QuerySpecification extends Properties("QueryParams") {
     val r = a.sql |+| b.sqlV
     val paramKey = r.params.keySet.head // An arbitrarily chosen parameter for b
     (r.params.size == 1) && (r.params.contains(paramKey)) && r.sql.endsWith("{%s}".format(paramKey))
+  } }
+
+}
+
+object QueryErrorSpecification extends Properties("Query.ErrorChecks") {
+  import Prop.{forAll, throws}
+
+  import Generators._
+
+  property("throws error when parameter key is duplicated, values different") = forAll(legitimateString, alphaMap, legitimateString, legitimateString) { (a: String, b: Map[String,String], c: String, d: String) => {
+    val q1 = a.sqlP(b + (c -> d))
+    val q2 = a.sqlP(b + (c -> (d + "_suffix")))
+    throws({q1 |+| q2}, classOf[DuplicatedParameterException])
   } }
 
 }
