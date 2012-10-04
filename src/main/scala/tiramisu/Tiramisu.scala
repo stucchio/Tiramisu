@@ -30,6 +30,8 @@ class Query(val sql: String, val params: Map[String,anorm.ParameterValue[_]]) {
     new Query( sql.format(newParams.map(x => "{%s}".format(x._1)): _*), mergeParams(params, newParams.toMap))
   }
 
+  def addParams(newParams: (String, anorm.ParameterValue[_])*): Query = new Query(sql, params ++ newParams)
+
   private def addWithCenter(center: String, q: Query, p: Query): Query = new Query(q.sql + center + p.sql, mergeParams(q.params, p.params))
 
   private def mergeParams(p: Map[String, anorm.ParameterValue[_]], q: Map[String, anorm.ParameterValue[_]]): Map[String, anorm.ParameterValue[_]] = {
