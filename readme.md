@@ -74,4 +74,4 @@ The `formatV` method specifies you wish to insert data:
 
     "SELECT * FROM foo WHERE id=%s AND slug=%s".sql.formatV(id, slug)
 
-The resulting SQL will be "SELECT * FROM foo WHERE id={336cf1ee_7599_49d3_b1a5_626ab58319ee} AND slug={8495c6ce_30f0_4908_b8d9_7ccbac1d78a9}", and the parameters to `formatV` will be the parameter values.
+The resulting SQL will be `"SELECT * FROM foo WHERE id={336cf1ee_7599_49d3_b1a5_626ab58319ee} AND slug={8495c6ce_30f0_4908_b8d9_7ccbac1d78a9}"`, and the parameters to `formatV` will be the parameter values.
