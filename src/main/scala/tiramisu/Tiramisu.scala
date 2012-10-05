@@ -23,6 +23,9 @@ class Query(val sql: String, val params: Map[String,anorm.ParameterValue[_]]) {
   def OR(q: Query) = addWithCenter(" OR ", this, q)
   def WHERE(q: Query) = addWithCenter(" WHERE ", this, q)
 
+  def LIMIT(limit: Long) = addWithParam(" LIMIT {%s} ", limit)
+  def OFFSET(offset: Long) = addWithParam(" OFFSET {%s} ", offset)
+
   def formatS(queries: Query*) = new Query(sql.format(queries: _*),
 					   queries.foldLeft(params)( (x:Map[String,anorm.ParameterValue[_]],y:Query) => mergeParams(x, y.params)))
   def formatV(values: anorm.ParameterValue[_]*) = {
@@ -34,9 +37,14 @@ class Query(val sql: String, val params: Map[String,anorm.ParameterValue[_]]) {
 
   private def addWithCenter(center: String, q: Query, p: Query): Query = new Query(q.sql + center + p.sql, mergeParams(q.params, p.params))
 
+  private def addWithParam(s: String, x: anorm.ParameterValue[_]) = {
+    val paramName = Query.randomParam
+    new Query(sql + s.format(paramName), params + (paramName -> x))
+  }
+
   private def mergeParams(p: Map[String, anorm.ParameterValue[_]], q: Map[String, anorm.ParameterValue[_]]): Map[String, anorm.ParameterValue[_]] = {
     val paramIntersection = p.keySet & q.keySet
-    val duplicatedParameters = paramIntersection.filter( k => p(k) != q(k) )
+    val duplicatedParameters = paramIntersection.filter( k => !p(k).aValue.equals(q(k).aValue) )
 
     if (!(p.keySet ++ q.keySet).forall(x => Query.parameterIsValid(x))) { //Make sure all parameters valid
       throw new InvalidParameterException("Invalid parameters: " + (p.keySet ++ q.keySet).filter(x => !Query.parameterIsValid(x)) )
@@ -52,7 +60,7 @@ class Query(val sql: String, val params: Map[String,anorm.ParameterValue[_]]) {
 object Query {
   private val parameterRegex = java.util.regex.Pattern.compile("^[\\w]+\\z")
   def parameterIsValid(p: String) = parameterRegex.matcher(p).matches()
-  def randomParam = java.util.UUID.randomUUID().toString().replace('-','_')
+  def randomParam: String = java.util.UUID.randomUUID().toString().replace('-','_')
 }
 
 object Tiramisu {
@@ -63,7 +71,7 @@ object Tiramisu {
 }
 
 object Syntax {
-  implicit def queryIsMonoid: Monoid[Query] = new Monoid[Query] { //Logs can be concatenated
+  implicit lazy val queryIsMonoid: Monoid[Query] = new Monoid[Query] { //Logs can be concatenated
     def append(q1: Query, q2: => Query): Query = q1.add(q2)
     def zero: Query = new Query("", Map())
   }
