@@ -9,7 +9,7 @@ class DuplicatedParameterException(e: String) extends TiramisuException(e)
 class InvalidParameterException(e: String) extends TiramisuException(e)
 class UnusedParameterException(e: String) extends TiramisuException(e)
 
-trait Query extends {
+trait Query {
   def sql: String
   def params: Map[String, anorm.ParameterValue[_]]
 
@@ -54,15 +54,6 @@ trait Query extends {
     }
     p ++ q
   }
-}
-
-case class ParamQuery(k: String, v: anorm.ParameterValue[_]) extends Query {
-  if (!Query.parameterIsValid(k)) {
-    throw new InvalidParameterException("Invalid parameter: " + (k -> v))
-  }
-  override val sql = "{%s}".format(k)
-  override def params = Map(k -> v)
-  override def toString(): String = "ParamQuery(" + k + ", " + v + ")"
 }
 
 class BaseQuery(val sql: String, val params: Map[String,anorm.ParameterValue[_]]) extends Query {
@@ -122,11 +113,12 @@ object Syntax {
 
   implicit def stringToStringToQuery(s: String): StringToQuery = new StringToQuery(s)
 
-  class ValToParam(k: String, v: anorm.ParameterValue[_]) {
-    def sqlV: ParamQuery = new ParamQuery(k, v)
+  class ValToParam(v: anorm.ParameterValue[_]) {
+    def sqlV: BaseQuery = {
+      val k = Query.randomParam
+      "{%s}".format(k).sqlP(k -> v)
+    }
   }
 
-  implicit def valToParamV(x: anorm.ParameterValue[_]):ValToParam = new ValToParam(Query.randomParam, x)
-  implicit def valToParamKVString(x: (String, String)):ValToParam = new ValToParam(x._1, x._2)
-  implicit def valToParamKVLong(x: (String, Long)):ValToParam = new ValToParam(x._1, x._2)
+  implicit def valToParamV(x: anorm.ParameterValue[_]):ValToParam = new ValToParam(x)
 }

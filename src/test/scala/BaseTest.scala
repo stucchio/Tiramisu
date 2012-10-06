@@ -108,16 +108,6 @@ object QuerySpecification extends Properties("Query.NormalUse") {
       (getParam(r.params, paramKey) == b) :| "Paramter value is correct"
     }
   } }
-
-  property("sqlV generates parameter objects with keys, addition works") = forAll(Gen.alphaStr, Gen.alphaStr, Gen.alphaStr) { (a: String, b: String, c: String) => {
-    (a != "" && b != "") ==> {
-      val r = a.sql + (b -> c).sqlV
-      (r.params.size == 1) :| "Parameter size is correct" &&
-      (r.params.contains(b)) :| "Key is contained" &&
-      (getParam(r.params, b) == c) :| "Value is correct" &&
-      r.sql.endsWith("{%s}".format(b)) :| "String ends with parameter value"
-    }
-  } }
 }
 
 object QueryConvenienceSpecification extends Properties("Query.Convenience") {
