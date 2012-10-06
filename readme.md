@@ -21,11 +21,11 @@ Although for a simple query like this, one could simply in-line the parameters i
     def sqlHelper(login: AuthToken): (String, Seq[(String, anorm.ParameterValue[_])]) = login match {
       case BasicToken(username, password) => (
           "(foo.user_id IN (SELECT user_id FROM basic_auth WHERE username={username} AND password={password}))",
-	    Seq("username" -> username, "password" -> password)
+          Seq("username" -> username, "password" -> password)
 	  )
       case FacebookToken(token) => (
             "(foo.user_id IN (SELECT user_id FROM facebook_auth WHERE token={token}))",
-	    Seq("token" -> token)
+            Seq("token" -> token)
 	  )
       case Unauthenticated => ("(foo.is_public)", Seq())
     }
@@ -70,7 +70,7 @@ As a convenience, Query objects have a set of convenience methods which enable u
     val limit: Long = 5
     val tokenClause = "token={token}".sqlP("token" -> token)
     val slugClause = "slug={slug}".sqlP("slug -> slug)
-
+q
     "SELECT * FROM foo ".sql WHERE tokenClause AND slugClause LIMIT limit OFFSET offset
 
 It is often convenient to construct queries via the `String.format` method. In ordinary SQL this is dangerous, since it conflates interpolating *values* with interpolating *sql statements*. Tiramisu allows formatting, but you must specify whether you are interpolating code or data. The `formatS` method specifies you wish to insert SQL:
