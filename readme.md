@@ -70,7 +70,7 @@ As a convenience, Query objects have a set of convenience methods which enable u
     val limit: Long = 5
     val tokenClause = "token={token}".sqlP("token" -> token)
     val slugClause = "slug={slug}".sqlP("slug -> slug)
-q
+
     "SELECT * FROM foo ".sql WHERE tokenClause AND slugClause LIMIT limit OFFSET offset
 
 It is often convenient to construct queries via the `String.format` method. In ordinary SQL this is dangerous, since it conflates interpolating *values* with interpolating *sql statements*. Tiramisu allows formatting, but you must specify whether you are interpolating code or data. The `formatS` method specifies you wish to insert SQL:
