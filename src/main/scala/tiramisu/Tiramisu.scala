@@ -2,6 +2,8 @@ package com.chrisstucchio.tiramisu
 
 import java.sql._
 
+import ParameterInjectors._
+
 class TiramisuException(e: String) extends Exception(e)
 
 class DuplicatedParameterException(e: String) extends TiramisuException(e)
@@ -12,15 +14,11 @@ trait Query {
   def sql: String
   def params: Seq[SqlParameter[_]]
 
-  def add(q: Query): Query = new BaseQuery(sql + q.sql, params ++ q.params)
-  def +(q: Query): Query = add(q)
+  def +(q: Query): Query = new StringBuilderQuery(List(sql, q.sql), params ++ q.params)
 
-/*  def AND(q: Query) = addWithCenter(" AND ", q)
+  def AND(q: Query) = addWithCenter(" AND ", q)
   def OR(q: Query) = addWithCenter(" OR ", q)
-  def WHERE(q: Query) = addWithCenter(" WHERE ", q) */
-
-  import ParameterInjectors._
-
+  def WHERE(q: Query) = addWithCenter(" WHERE ", q)
   def LIMIT(limit: Long): Query = this + BaseQuery(" LIMIT ? ", Seq(limit))
   def OFFSET(offset: Long): Query = this + BaseQuery(" OFFSET ? ", Seq(offset))
 
@@ -41,10 +39,22 @@ trait Query {
   }
 }
 
-case class BaseQuery(val sql: String, val params: Seq[SqlParameter[_]]) extends Query {
-  override def add(q: Query): BaseQuery = new BaseQuery(sql + q.sql, params ++ q.params)
+object Query {
+  def apply(sql: String, params: Seq[SqlParameter[_]]): Query = BaseQuery(sql, params)
+}
 
-  override def +(q: Query): BaseQuery = add(q) //duplicated here to have more specific type signature
-
+private case class BaseQuery(val sql: String, val params: Seq[SqlParameter[_]]) extends Query {
   override def toString(): String = "BaseQuery(" + sql + ", " + params + ")"
+}
+
+private case class StringBuilderQuery(val sqlStrings: List[String], val params: Seq[SqlParameter[_]]) extends Query {
+  lazy val sql: String = {
+    val sb = new StringBuilder()
+    sqlStrings.foreach(s => sb.append(s))
+    sb.toString()
+  }
+  override def +(q: Query): Query = q match {
+    case StringBuilderQuery(otherStrings, otherParams) => StringBuilderQuery(sqlStrings ++ otherStrings, params ++ otherParams)
+    case (other:Query) => StringBuilderQuery(sqlStrings ++ Seq(other.sql), params ++ other.params)
+  }
 }

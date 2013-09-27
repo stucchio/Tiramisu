@@ -8,14 +8,15 @@ trait ParameterInjector[T] {
   def apply(value: T): SqlParameter[T] = SqlParameter(value)(this)
 }
 
-case class SqlParameter[T](value: T)(implicit injector: ParameterInjector[T]) {
-  def param: SqlParameter[T] = this // Useful so that x.param will translate to
+case class SqlParameter[T](value: T)(implicit injector: ParameterInjector[T]) extends Query {
+  def sqlV: SqlParameter[T] = this // Useful so that x.param will translate to
   def setParam(position: Int, statement: PreparedStatement): Unit = injector.setParam(position, value, statement)
+
+  def params: Seq[SqlParameter[_]] = Seq(this)
+  def sql: String = " ? "
 }
 
 object ParameterInjectors {
-  implicit def toParam[T](l: T)(implicit pi: ParameterInjector[T]) = SqlParameter(l)
-
   implicit object LongInjector extends ParameterInjector[Long] {
     def setParam(position: Int, value: Long, statement: PreparedStatement) = statement.setLong(position, value)
   }
