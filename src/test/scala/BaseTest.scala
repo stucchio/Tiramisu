@@ -54,21 +54,43 @@ object QuerySpecification extends Properties("Query.Specification") {
   } }
 }
 
-/*object QueryDatabaseSpecification extends Properties("Query.Database") {
+object QueryDatabaseSpecification extends Properties("Query.Database") {
   Class.forName("org.postgresql.Driver")
 
-  def getConnection = {
+  def withConnection[T](f: Connection => T) = {
     val url = "jdbc:postgresql://172.17.0.2/bayesianwitch"
     val props = new java.util.Properties()
     props.setProperty("user", "bayesianwitch")
     props.setProperty("password", "RNpHEOUg89fmQ")
-    DriverManager.getConnection(url, props)
+    val conn = DriverManager.getConnection(url, props)
+    val result = f(conn)
+    conn.close()
+    result
+  }
+
+  def pullFromSql(uuid: java.util.UUID, conn: Connection): String = {
+    val resultQuery = "SELECT name FROM clients WHERE name = ?".sqlP(uuid.toString.sqlV)
+    val psr = resultQuery.prepareStatement(conn)
+    val rs = psr.executeQuery()
+    rs.next()
+    rs.getString(1)
   }
 
   import Generators._
-  property("addition adds sql strings") = forAll(legitimateString) { (a: String) => {
-    val conn = getConnection
-    true
-  } }
+  property("sql insert works") = forAll(legitimateString) { (a: String) => withConnection(conn => {
+    val uuid = java.util.UUID.randomUUID()
+    val query = "INSERT INTO clients (name) VALUES (?)".sqlP(uuid.toString.sqlV)
+    val ps = query.prepareStatement(conn)
+    ps.executeUpdate()
+    pullFromSql(uuid, conn) == uuid.toString
+  }) }
+
+  import Generators._
+  property("sql insert works 2") = forAll(legitimateString) { (a: String) => withConnection(conn => {
+    val uuid = java.util.UUID.randomUUID()
+    val query = "INSERT INTO clients (name) VALUES (".sqlP() + (uuid.toString.sqlV) + ")".sqlP()
+    val ps = query.prepareStatement(conn)
+    ps.executeUpdate()
+    pullFromSql(uuid, conn) == uuid.toString
+  }) }
 }
- */

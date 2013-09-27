@@ -15,9 +15,9 @@ object ApplicationBuild extends Build {
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-core" % "7.0.1",
       "joda-time" % "joda-time" % "2.0",
       "org.joda" % "joda-convert" % "1.1",
-      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test"
-/*      "postgresql" % "postgresql" % "9.1-901.jdbc4" % "test",
-      "com.jolbox" % "bonecp" % "0.7.1.RELEASE" % "test"*/
+      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
+      "postgresql" % "postgresql" % "9.1-901.jdbc4" % "test"
+/*      "com.jolbox" % "bonecp" % "0.7.1.RELEASE" % "test"*/
     )
   )
 

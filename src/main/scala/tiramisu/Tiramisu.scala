@@ -34,7 +34,7 @@ trait Query {
 
   def prepareStatement(conn: Connection): PreparedStatement = {
     val ps = conn.prepareStatement(sql)
-    params.zipWithIndex.foreach( x => x._1.setParam(x._2, ps) )
+    params.zipWithIndex.foreach( x => x._1.setParam(x._2+1, ps) )
     ps
   }
 }
