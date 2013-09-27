@@ -30,7 +30,7 @@ trait Query {
       case _ => false
     }
   }
-  protected def addWithCenter(center: String, p: Query): Query = new BaseQuery(this.sql + center + p.sql, this.params ++ p.params)
+  protected def addWithCenter(center: String, other: Query): Query = this + center.sqlP() + other
 
   def prepareStatement(conn: Connection): PreparedStatement = {
     val ps = conn.prepareStatement(sql)
