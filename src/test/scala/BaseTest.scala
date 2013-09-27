@@ -3,6 +3,8 @@ import org.scalacheck._
 import scalaz._
 import Scalaz._
 
+import java.sql._
+
 import Prop.forAll
 
 import com.chrisstucchio.tiramisu._
@@ -51,3 +53,22 @@ object QuerySpecification extends Properties("Query.Specification") {
     (Query(a, ap) |+| Query(b, bp) |+| Query(c, cp)).params == ap ++ bp ++ cp
   } }
 }
+
+/*object QueryDatabaseSpecification extends Properties("Query.Database") {
+  Class.forName("org.postgresql.Driver")
+
+  def getConnection = {
+    val url = "jdbc:postgresql://172.17.0.2/bayesianwitch"
+    val props = new java.util.Properties()
+    props.setProperty("user", "bayesianwitch")
+    props.setProperty("password", "RNpHEOUg89fmQ")
+    DriverManager.getConnection(url, props)
+  }
+
+  import Generators._
+  property("addition adds sql strings") = forAll(legitimateString) { (a: String) => {
+    val conn = getConnection
+    true
+  } }
+}
+ */
