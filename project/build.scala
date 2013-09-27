@@ -1,23 +1,22 @@
 import sbt._
 import Defaults._
 import Keys._
-import com.github.retronym.SbtOneJar
 
 object ApplicationBuild extends Build {
 
   lazy val commonSettings = Defaults.defaultSettings ++ Seq(
     organization := "com.chrisstucchio",
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
-    scalaVersion := "2.9.1",
+    scalaVersion := "2.10.0",
     version := "0.1",
     resolvers ++= myResolvers,
     name := "tiramisu",
-    mainClass := Some("com.patch.injera.BeaconServer"),
     //fork := true,
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-core" % "7.0-SNAPSHOT",
-				"play" %% "anorm" % "2.0.4",
-				"org.scalacheck" %% "scalacheck" % "1.10.0" % "test"
-				)
+      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
+      "joda-time" % "joda-time" % "2.0",
+      "org.joda" % "joda-convert" % "1.1"
+    )
 
   )
 
