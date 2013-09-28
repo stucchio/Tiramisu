@@ -2,7 +2,8 @@
 
 Tiramisu is a small library for constructing prepared SQL statements in a more intuitive manner. Specifically, you can construct SQL queries in a manner that looks syntactically like string concatenation:
 
-    val query = "SELECT * FROM user_profiles WHERE user_id = (SELECT id FROM users WHERE user_token = ".sqlP() + userToken.sqlV + ");".sqlP()
+    val query = """SELECT * FROM user_profiles
+                        WHERE user_id = (SELECT id FROM users WHERE user_token = """.sqlP() + userToken.sqlV + ");".sqlP()
 
 This format is handy for programmatically creating complex queries based on input of polymorphic type. Consider the following reference type:
 
@@ -38,7 +39,7 @@ SQL injection errors are caused by the fact that prepared statements are complex
 
 ## Specifics
 
-Import Tiramisu, together with it's syntax:
+Import Tiramisu, together with a collection of ParameterInjector objects (the details of which depend on your specific SQL driver):
 
     import com.chrisstucchio.tiramisu._
     import com.chrisstucchio.tiramisu.ParameterInjector._
@@ -67,3 +68,13 @@ As a convenience, Query objects have a set of convenience methods which enable u
     val slugClause = "slug=?".sqlP(slug)
 
     "SELECT * FROM foo ".sqlP() WHERE tokenClause AND slugClause LIMIT limit OFFSET offset
+
+## ParameterInjector and SqlParameter
+
+A `ParameterInjector[T]` object knows how to insert an object of type `T` into a position in a `PreparedStatement`. Apart from the basic types supported by JDBC, this is generally a property of your specific SQL driver.
+
+The method `t.sqlV` will only work if an implicit `ParameterInjector[T]` is present. This grants a degree of type safety, making it impossible to inject objects of a type that JDBC cannot handle into a prepared statement. A custom `ParameterInjector` can also be created to handle custom types. For example, Tiramisu comes with an implicit converter from a joda `DateTime` object to a `java.sql.Timestamp` object:
+
+    object DateInjector extends ParameterInjector[DateTime] {
+      def setParam(position: Int, value: DateTime, statement: PreparedStatement) = statement.setTimestamp(position, new Timestamp(value.getMillis))
+    }
