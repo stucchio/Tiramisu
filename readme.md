@@ -1,88 +1,69 @@
 # Tiramisu
 
-Tiramisu is a small library for constructing prepared SQL statements to be passed into [Anorm](https://github.com/playframework/Play20/wiki/ScalaAnorm). The motivation behind Tiramisu is that while Anorm is a decent library for interacting with SQL, assorted utilities are often necessary to *construct* the SQL to be passed into Anorm.
+Tiramisu is a small library for constructing prepared SQL statements in a more intuitive manner. Specifically, you can construct SQL queries in a manner that looks syntactically like string concatenation:
 
-One particular difficulty is that Anorm requires two parameters - a prepared SQL statement containing dynamic parameters, and a separate parameter list. *I completely ignore the case where string variables are deliberately inserted into SQL, since down that path lies SQL injection.* Helper functions often must then return pairs of values:
+    val query = "SELECT * FROM user_profiles WHERE user_id = (SELECT id FROM users WHERE user_token = ".sqlP() + userToken.sqlV + ");".sqlP()
 
-    def sqlHelper(obj: FooClass): (String, Seq[(String, anorm.ParameterValue[_])] =
-      (" slug={obj_slug} AND security_token={obj_security_token} ",
-       Seq("obj_slug" -> obj.slug, "obj_security_token" -> obj.token))
+This format is handy for programmatically creating complex queries based on input of polymorphic type. Consider the following reference type:
 
-Then when they are used, code becomes rather convoluted:
+    trait UserIdent
+    case class UserIdentByEmail(email: String) extends UserIdent
+    case class UserIdentByTwitter(twitterId: Long) extends UserIdent
 
-    val baseSql = "SELECT * FROM foo WHERE "
-    val (objClause, objParams) = sqlHelper(obj)
-    val finalSql = baseSQL + objClause
+It would be desirable to be able to write a function of the form:
 
-    SQL(finalSql).on(objParams: _*)()(dbConnection)
+    def getUserProfile(userIdent: UserIdent): UserProfile
 
-Although for a simple query like this, one could simply in-line the parameters in baseSQL, for more complicated queries (where the parameters vary), that isn't possible:
+With straight JDBC it would be tricky:
 
-    def sqlHelper(login: AuthToken): (String, Seq[(String, anorm.ParameterValue[_])]) = login match {
-      case BasicToken(username, password) => (
-          "(foo.user_id IN (SELECT user_id FROM basic_auth WHERE username={username} AND password={password}))",
-          Seq("username" -> username, "password" -> password)
-	  )
-      case FacebookToken(token) => (
-            "(foo.user_id IN (SELECT user_id FROM facebook_auth WHERE token={token}))",
-            Seq("token" -> token)
-	  )
-      case Unauthenticated => ("(foo.is_public)", Seq())
+    def getUserProfile(userIdent: UserIdent) = userIdent match {
+      case UserIdentByEmail(email) => { ...create a query here.. }
+      case UserIdentByEmail(email) => { ...same code, with only one clause changed... }
     }
 
-The goal of Tiramisu is to combine SQL and the parameter list into a single object. Then SQL and the necessary parameters can be seamlessly combined, resulting in cleaner code:
+Using Tiramisu we can simplify this significantly:
 
-    def sqlHelper(obj: FooClass): Query = " slug={obj_slug} AND security_token={obj_security_token} ".sqlP("obj_slug" -> obj.slug, "obj_security_token" -> obj.token)
+    def userIdClause(userIdent: UserIdent) = userIdent match {
+      case UserIdentByEmail(email) => "(SELECT id FROM users WHERE email = ?)".sqlP(email)
+      case UserIdentByTwitter(twitterId) => "(SELECT id FROM users WHERE twitter_id = ?)".sqlP(twitterId)
+    }
 
-Then this is used as follows:
+    def getUserProfile(userIdent: UserIdent) = {
+      val query = "SELECT * FROM user_profiles WHERE user_id = ".sqlP() + userIdClause(userIdent)
+    }
 
-    val query = "SELECT * FROM foo WHERE ".sql |+| sqlHelper(obj)
-    Tiramisu.Select(query) //Uses the implicit dbConnection
+The method `userIdClause` can be used elsewhere uniformly.
+
+SQL injection errors are caused by the fact that prepared statements are complex to write, and string concatenation is easy. The purpose of Tiramisu is to make prepared statements as easy to write as code which builds SQL by string concatenation.
 
 ## Specifics
 
 Import Tiramisu, together with it's syntax:
 
     import com.chrisstucchio.tiramisu._
-    import com.chrisstucchio.tiramisu.Syntax._
+    import com.chrisstucchio.tiramisu.ParameterInjector._
 
-The `.sql` method creates a Query object from a string:
+The `.sqlP` method creates a Query object from a string:
 
-    "SELECT * FROM foo ".sql
+    "SELECT * FROM foo ".sqlP()
 
-The `.sqlP` method creates a query object and assigns parameters:
+It can also be used to assign parameters:
 
-    "SELECT * FROM foo WHERE slug={slug} AND token={token}".sqlP("slug" -> foo.slug, "token" -> foo.token)
+    "SELECT * FROM foo WHERE slug=? AND token=?".sqlP(foo.slug.sqlV, foo.token.sqlV)
 
-The `.sqlV` method turns any `anorm.ParameterValue[_]` object into a query with that object into the parameter. It's best illustrated via example:
+The `.sqlV` method turns many objects into a `SqlParameter` object, which can laso be included in queries by concatenation:
 
-    "SELECT * FROM bar WHERE slug=".sql |+| slug.sqlV |+| " AND token=".sql |+| token.sqlV
+    "SELECT * FROM bar WHERE slug=".sqlP() + slug.sqlV + " AND token=".sqlP() + token.sqlV
 
-Note that although this looks like string interpolation, we are actually parameterizing the slug and token variables. The generated SQL looks something like this (though the parameter names will vary):
+Note that although this looks like string interpolation, we are actually parameterizing the slug and token variables. The generated SQL looks something like this:
 
-    "SELECT * FROM bar WHERE
-         slug={336cf1ee_7599_49d3_b1a5_626ab58319ee} AND
-             token={8495c6ce_30f0_4908_b8d9_7ccbac1d78a9}"
+    SELECT * FROM bar WHERE slug = ? AND token = ?
 
-As a convenience, Query objects have a set of convenience methods which enable us to avoid repetitive boilerplate like `" AND ".sql`:
+As a convenience, Query objects have a set of convenience methods which enable us to avoid repetitive boilerplate like `" AND ".sqlP()`:
 
     val offset: Long = 10
     val limit: Long = 5
-    val tokenClause = "token={token}".sqlP("token" -> token)
-    val slugClause = "slug={slug}".sqlP("slug -> slug)
+    val tokenClause = "token=?".sqlP(token)
+    val slugClause = "slug=?".sqlP(slug)
 
-    "SELECT * FROM foo ".sql WHERE tokenClause AND slugClause LIMIT limit OFFSET offset
-
-It is often convenient to construct queries via the `String.format` method. In ordinary SQL this is dangerous, since it conflates interpolating *values* with interpolating *sql statements*. Tiramisu allows formatting, but you must specify whether you are interpolating code or data. The `formatS` method specifies you wish to insert SQL:
-
-    "SELECT * FROM foo WHERE id = %s".sql.formatS(
-        "(SELECT foo_id FROM join_table WHERE slug={slug})".sqlP("slug" -> slug)
-	)
-
-This will substitute the specified query for `%s` and it will ALSO combine the parameter lists.
-
-The `formatV` method specifies you wish to insert data:
-
-    "SELECT * FROM foo WHERE id=%s AND slug=%s".sql.formatV(id, slug)
-
-The resulting SQL will be `"SELECT * FROM foo WHERE id={336cf1ee_7599_49d3_b1a5_626ab58319ee} AND slug={8495c6ce_30f0_4908_b8d9_7ccbac1d78a9}"`, and the parameters to `formatV` will be the parameter values.
+    "SELECT * FROM foo ".sqlP() WHERE tokenClause AND slugClause LIMIT limit OFFSET offset
