@@ -32,10 +32,15 @@ trait Query {
   }
   protected def addWithCenter(center: String, other: Query): Query = this + center.sqlP() + other
 
-  def prepareStatement(conn: Connection): PreparedStatement = {
+  def prepareStatement(implicit conn: Connection): PreparedStatement = {
     val ps = conn.prepareStatement(sql)
     params.zipWithIndex.foreach( x => x._1.setParam(x._2+1, ps) )
     ps
+  }
+
+  def executeUpdate(implicit conn: Connection): Int = {
+    val ps = prepareStatement(conn)
+    ps.executeUpdate()
   }
 }
 
