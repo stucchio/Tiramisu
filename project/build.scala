@@ -8,7 +8,7 @@ object ApplicationBuild extends Build {
     organization := "com.chrisstucchio",
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     scalaVersion := "2.10.0",
-    version := "0.1",
+    version := "0.12",
     resolvers ++= myResolvers,
     name := "tiramisu",
     //fork := true,
@@ -18,7 +18,8 @@ object ApplicationBuild extends Build {
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
       "postgresql" % "postgresql" % "9.1-901.jdbc4" % "test"
 /*      "com.jolbox" % "bonecp" % "0.7.1.RELEASE" % "test"*/
-    )
+    ),
+    publishTo := Some(Resolver.file("file",  new File( "/tmp/tiramisu-publish" )) )
   )
 
   val myResolvers = Seq("Sonatatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",

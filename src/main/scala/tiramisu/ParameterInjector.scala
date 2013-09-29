@@ -30,3 +30,9 @@ object ParameterInjectors {
     def setParam(position: Int, value: DateTime, statement: PreparedStatement) = statement.setTimestamp(position, new Timestamp(value.getMillis))
   }
 }
+
+object PostgresqlInjectors {
+  implicit object UUIDInjector extends ParameterInjector[java.util.UUID] {
+    def setParam(position: Int, value: java.util.UUID, statement: PreparedStatement) = statement.setObject(position, value)
+  }
+}
