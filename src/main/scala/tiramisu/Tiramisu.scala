@@ -42,6 +42,16 @@ trait Query {
     val ps = prepareStatement(conn)
     ps.executeUpdate()
   }
+
+  def executeQuery(implicit conn: Connection): ResultSet = {
+    val ps = prepareStatement(conn)
+    ps.executeQuery()
+  }
+
+  def execute(implicit conn: Connection): Boolean = {
+    val ps = prepareStatement(conn)
+    ps.execute()
+  }
 }
 
 object Query {
