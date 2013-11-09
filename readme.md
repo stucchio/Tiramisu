@@ -87,3 +87,42 @@ The method `t.sqlV` will only work if an implicit `ParameterInjector[T]` is pres
     object DateInjector extends ParameterInjector[DateTime] {
       def setParam(position: Int, value: DateTime, statement: PreparedStatement) = statement.setTimestamp(position, new Timestamp(value.getMillis))
     }
+
+## Other utilities
+
+### com.chrisstucchio.tiramisu.utils
+
+One useful utility for improving performance is the `PreparedStatementCachingConnection`, which is an implementation of `java.sql.Connection`. This class creates a prepared statement cache. Consider the following code:
+
+    implicit val conn = GetConnection()
+    val query1 = "SELECT * FROM foo WHERE foo_id=?".sqlP(foo1Id)
+    val rs = query1.executeQuery
+    ...
+    val query2 = "SELECT * FROM foo WHERE foo_id=?".sqlP(foo2Id)
+    val rs = query1.executeQuery
+    ...
+
+Both `query1` and `query2` create the same `PreparedStatement`, resulting in duplication and unnecessary trips across the network. To skip this unnecessary work, simply use:
+
+    implicit val conn = PreparedStatementCachingConnection(GetConnection())
+
+### com.chrisstucchio.tiramisu.utils.wrappers
+
+This package contains simple traits that make it easy to build your own implementation `java.sql.*` objects. For example, to build an implementation of `java.sql.Connection` which measures how much time it spends running methods:
+
+    class TimingConnection(protected val conn: java.sql.Connection) extends ConnectionWrapper {
+        var timeSpent: Long = 0
+        override protected def methodWrap[t](f: =>T) = {
+	    val start = System.currentTimeMillis()
+	    val result = f
+	    timeSpent += (System.currentTimeMillis() - start)
+	    result
+	}
+    }
+
+The `ConnectionWrapper` trait handles all the boilerplate necessary to implement a `java.sql.Connection`.
+
+    def close(): Unit = methodWrap { conn.close() }
+    def commit(): Unit = methodWrap { conn.commit() }
+    def createArrayOf(x: String,y: Array[Object]): java.sql.Array = methodWrap { conn.createArrayOf(x,y) }
+    ...
