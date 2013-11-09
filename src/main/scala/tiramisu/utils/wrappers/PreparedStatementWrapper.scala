@@ -1,4 +1,4 @@
-package com.chrisstucchio.tiramisu.utils
+package com.chrisstucchio.tiramisu.utils.wrappers
 
 trait PreparedStatementWrapper extends StatementWrapper with java.sql.PreparedStatement {
   protected val stmt: java.sql.PreparedStatement

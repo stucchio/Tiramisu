@@ -1,4 +1,4 @@
-package com.chrisstucchio.tiramisu.utils
+package com.chrisstucchio.tiramisu.utils.wrappers
 
 trait ConnectionWrapper extends java.sql.Connection {
   protected val conn: java.sql.Connection

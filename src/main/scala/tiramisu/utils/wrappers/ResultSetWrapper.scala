@@ -1,4 +1,4 @@
-package com.chrisstucchio.tiramisu.utils
+package com.chrisstucchio.tiramisu.utils.wrappers
 
 trait ResultSetWrapper extends java.sql.ResultSet {
   protected val rs: java.sql.ResultSet

@@ -1,4 +1,4 @@
-package com.chrisstucchio.tiramisu.utils
+package com.chrisstucchio.tiramisu.utils.wrappers
 
 trait StatementWrapper extends java.sql.Statement {
   protected def stmt: java.sql.Statement

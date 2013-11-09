@@ -1,7 +1,7 @@
-package com.chrisstucchio.tiramisu
+package com.chrisstucchio.tiramisu.utils
 
 import java.sql._
-import utils.ConnectionWrapper
+import wrappers.ConnectionWrapper
 
 object PreparedStatementCachingConnection {
   def apply(conn: Connection) = new PreparedStatementCachingConnection(conn)
