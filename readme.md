@@ -1,6 +1,15 @@
 # Tiramisu
 
-Tiramisu is a small library for constructing prepared SQL statements in a more intuitive manner. Specifically, you can construct SQL queries in a manner that looks syntactically like string concatenation:
+## Installation
+
+Add this to your build.scala file:
+
+    resolvers ++= "chrisstucchio" at "http://maven.chrisstucchio.com/",
+    libraryDependencies ++= "com.chrisstucchio" %% "tiramisu" % "0.15"
+
+## Usage
+
+Tiramisu is a small library for constructing prepared SQL statements in an intuitive manner. Specifically, you can construct SQL queries in a manner that looks syntactically like string concatenation:
 
     val query = """SELECT * FROM user_profiles
                         WHERE user_id = (SELECT id FROM users WHERE user_token = """.sqlP() + userToken.sqlV + ");".sqlP()
@@ -50,7 +59,7 @@ The `.sqlP` method creates a Query object from a string:
 
 It can also be used to assign parameters:
 
-    "SELECT * FROM foo WHERE slug=? AND token=?".sqlP(foo.slug.sqlV, foo.token.sqlV)
+    "SELECT * FROM foo WHERE slug=? AND token=?".sqlP(foo.slug, foo.token)
 
 The `.sqlV` method turns many objects into a `SqlParameter` object, which can laso be included in queries by concatenation:
 

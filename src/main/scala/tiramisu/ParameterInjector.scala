@@ -29,6 +29,9 @@ object ParameterInjectors {
   implicit object DateInjector extends ParameterInjector[DateTime] {
     def setParam(position: Int, value: DateTime, statement: PreparedStatement) = statement.setTimestamp(position, new Timestamp(value.getMillis))
   }
+  implicit object BooleanInjector extends ParameterInjector[Boolean] {
+    def setParam(position: Int, value: Boolean, statement: PreparedStatement) = statement.setBoolean(position, value)
+  }
 }
 
 object PostgresqlInjectors {
