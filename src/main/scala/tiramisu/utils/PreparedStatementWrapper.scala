@@ -1,6 +1,8 @@
 package com.chrisstucchio.tiramisu.utils
 
-class PreparedStatementWrapper(val stmt: java.sql.PreparedStatement) extends StatementWrapper with java.sql.PreparedStatement{
+trait PreparedStatementWrapper extends StatementWrapper with java.sql.PreparedStatement {
+  protected val stmt: java.sql.PreparedStatement
+
   def addBatch(): Unit = methodWrap { stmt.addBatch() }
   def clearParameters(): Unit = methodWrap { stmt.clearParameters() }
   def execute(): Boolean = methodWrap { stmt.execute() }
