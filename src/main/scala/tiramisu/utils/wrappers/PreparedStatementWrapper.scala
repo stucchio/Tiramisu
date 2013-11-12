@@ -6,7 +6,7 @@ trait PreparedStatementWrapper extends StatementWrapper with java.sql.PreparedSt
   def addBatch(): Unit = methodWrap { stmt.addBatch() }
   def clearParameters(): Unit = methodWrap { stmt.clearParameters() }
   def execute(): Boolean = methodWrap { stmt.execute() }
-  def executeQuery(): java.sql.ResultSet = methodWrap { stmt.executeQuery() }
+  def executeQuery(): java.sql.ResultSet = wrapResultSet(methodWrap { stmt.executeQuery() })
   def executeUpdate(): Int = methodWrap { stmt.executeUpdate() }
   def getMetaData(): java.sql.ResultSetMetaData = methodWrap { stmt.getMetaData() }
   def getParameterMetaData(): java.sql.ParameterMetaData = methodWrap { stmt.getParameterMetaData() }

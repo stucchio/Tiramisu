@@ -4,6 +4,7 @@ trait StatementWrapper extends java.sql.Statement {
   protected def stmt: java.sql.Statement
 
   protected def methodWrap[T](f: =>T): T = f
+  protected def wrapResultSet(rs: java.sql.ResultSet): java.sql.ResultSet = rs
 
   def addBatch(x$1: String): Unit = methodWrap { stmt.addBatch(x$1) }
   def cancel(): Unit = methodWrap { stmt.cancel() }
@@ -16,7 +17,7 @@ trait StatementWrapper extends java.sql.Statement {
   def execute(x$1: String,x$2: Int): Boolean = methodWrap { stmt.execute(x$1, x$2) }
   def execute(x$1: String): Boolean = methodWrap { stmt.execute(x$1) }
   def executeBatch(): Array[Int] = methodWrap { stmt.executeBatch() }
-  def executeQuery(x$1: String): java.sql.ResultSet = methodWrap { stmt.executeQuery(x$1) }
+  def executeQuery(x$1: String): java.sql.ResultSet = wrapResultSet( methodWrap { stmt.executeQuery(x$1) })
   def executeUpdate(x$1: String,x$2: Array[String]): Int = methodWrap { stmt.executeUpdate(x$1,x$2) }
   def executeUpdate(x$1: String,x$2: Array[Int]): Int = methodWrap { stmt.executeUpdate(x$1,x$2) }
   def executeUpdate(x$1: String,x$2: Int): Int = methodWrap { stmt.executeUpdate(x$1,x$2) }
@@ -24,13 +25,13 @@ trait StatementWrapper extends java.sql.Statement {
   def getConnection(): java.sql.Connection = methodWrap { stmt.getConnection() }
   def getFetchDirection(): Int = methodWrap { stmt.getFetchDirection() }
   def getFetchSize(): Int = methodWrap { stmt.getFetchSize() }
-  def getGeneratedKeys(): java.sql.ResultSet = methodWrap { stmt.getGeneratedKeys() }
+  def getGeneratedKeys(): java.sql.ResultSet = wrapResultSet(methodWrap { stmt.getGeneratedKeys() })
   def getMaxFieldSize(): Int = methodWrap { stmt.getMaxFieldSize() }
   def getMaxRows(): Int = methodWrap { stmt.getMaxRows() }
   def getMoreResults(x$1: Int): Boolean = methodWrap { stmt.getMoreResults(x$1) }
   def getMoreResults(): Boolean = methodWrap { stmt.getMoreResults() }
   def getQueryTimeout(): Int = methodWrap { stmt.getQueryTimeout() }
-  def getResultSet(): java.sql.ResultSet = methodWrap { stmt.getResultSet() }
+  def getResultSet(): java.sql.ResultSet = wrapResultSet(methodWrap { stmt.getResultSet() })
   def getResultSetConcurrency(): Int = methodWrap { stmt.getResultSetConcurrency() }
   def getResultSetHoldability(): Int = methodWrap { stmt.getResultSetHoldability() }
   def getResultSetType(): Int = methodWrap { stmt.getResultSetType() }

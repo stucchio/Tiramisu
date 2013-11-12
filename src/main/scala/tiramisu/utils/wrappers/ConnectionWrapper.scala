@@ -4,6 +4,9 @@ trait ConnectionWrapper extends java.sql.Connection {
   protected val conn: java.sql.Connection
 
   protected def methodWrap[T](f: =>T): T = f
+  protected def wrapStatement(stmt: java.sql.Statement) = stmt
+  protected def wrapPreparedStatement(stmt: java.sql.PreparedStatement) = stmt
+  protected def wrapCallableStatement(stmt: java.sql.CallableStatement) = stmt
 
   def abort(x: java.util.concurrent.Executor): Unit = methodWrap { conn.abort(x) }
   def clearWarnings(): Unit = methodWrap { conn.clearWarnings() }
@@ -14,9 +17,9 @@ trait ConnectionWrapper extends java.sql.Connection {
   def createClob(): java.sql.Clob = methodWrap { conn.createClob() }
   def createNClob(): java.sql.NClob = methodWrap { conn.createNClob() }
   def createSQLXML(): java.sql.SQLXML = methodWrap { conn.createSQLXML() }
-  def createStatement(x: Int,y: Int,z: Int): java.sql.Statement = methodWrap { conn.createStatement(x,y,z) }
-  def createStatement(x: Int,y: Int): java.sql.Statement = methodWrap { conn.createStatement(x,y) }
-  def createStatement(): java.sql.Statement = methodWrap { conn.createStatement() }
+  def createStatement(x: Int,y: Int,z: Int): java.sql.Statement = wrapStatement(methodWrap { conn.createStatement(x,y,z) })
+  def createStatement(x: Int,y: Int): java.sql.Statement = wrapStatement(methodWrap { conn.createStatement(x,y) })
+  def createStatement(): java.sql.Statement = wrapStatement(methodWrap { conn.createStatement() })
   def createStruct(x: String,y: Array[Object]): java.sql.Struct = methodWrap { conn.createStruct(x,y) }
   def getAutoCommit(): Boolean = methodWrap { conn.getAutoCommit() }
   def getCatalog(): String = methodWrap { conn.getCatalog() }
@@ -33,15 +36,15 @@ trait ConnectionWrapper extends java.sql.Connection {
   def isReadOnly(): Boolean = methodWrap { conn.isReadOnly() }
   def isValid(x: Int): Boolean = methodWrap { conn.isValid(x) }
   def nativeSQL(x: String): String = methodWrap { conn.nativeSQL(x) }
-  def prepareCall(x: String,y: Int,z: Int,w: Int): java.sql.CallableStatement = methodWrap { conn.prepareCall(x,y,z,w) }
-  def prepareCall(x: String,y: Int,z: Int): java.sql.CallableStatement = methodWrap { conn.prepareCall(x,y,z) }
-  def prepareCall(x: String): java.sql.CallableStatement = methodWrap { conn.prepareCall(x) }
-  def prepareStatement(x: String,y: Array[String]): java.sql.PreparedStatement = methodWrap { conn.prepareStatement(x,y) }
-  def prepareStatement(x: String,y: Array[Int]): java.sql.PreparedStatement = methodWrap { conn.prepareStatement(x,y) }
-  def prepareStatement(x: String,y: Int): java.sql.PreparedStatement = methodWrap { conn.prepareStatement(x,y) }
-  def prepareStatement(x: String,y: Int,z: Int,w: Int): java.sql.PreparedStatement = methodWrap { conn.prepareStatement(x,y,z,w) }
-  def prepareStatement(x: String,y: Int,z: Int): java.sql.PreparedStatement = methodWrap { conn.prepareStatement(x,y,z) }
-  def prepareStatement(x: String): java.sql.PreparedStatement = methodWrap { conn.prepareStatement(x) }
+  def prepareCall(x: String,y: Int,z: Int,w: Int): java.sql.CallableStatement = wrapCallableStatement(methodWrap { conn.prepareCall(x,y,z,w) })
+  def prepareCall(x: String,y: Int,z: Int): java.sql.CallableStatement = wrapCallableStatement(methodWrap { conn.prepareCall(x,y,z) })
+  def prepareCall(x: String): java.sql.CallableStatement = wrapCallableStatement(methodWrap { conn.prepareCall(x) })
+  def prepareStatement(x: String,y: Array[String]): java.sql.PreparedStatement = wrapPreparedStatement(methodWrap { conn.prepareStatement(x,y) })
+  def prepareStatement(x: String,y: Array[Int]): java.sql.PreparedStatement = wrapPreparedStatement(methodWrap { conn.prepareStatement(x,y) })
+  def prepareStatement(x: String,y: Int): java.sql.PreparedStatement = wrapPreparedStatement(methodWrap { conn.prepareStatement(x,y) })
+  def prepareStatement(x: String,y: Int,z: Int,w: Int): java.sql.PreparedStatement = wrapPreparedStatement(methodWrap { conn.prepareStatement(x,y,z,w) })
+  def prepareStatement(x: String,y: Int,z: Int): java.sql.PreparedStatement = wrapPreparedStatement(methodWrap { conn.prepareStatement(x,y,z) })
+  def prepareStatement(x: String): java.sql.PreparedStatement = wrapPreparedStatement(methodWrap { conn.prepareStatement(x) })
   def releaseSavepoint(x: java.sql.Savepoint): Unit = methodWrap { conn.releaseSavepoint(x) }
   def rollback(x: java.sql.Savepoint): Unit = methodWrap { conn.rollback(x) }
   def rollback(): Unit = methodWrap { conn.rollback() }
