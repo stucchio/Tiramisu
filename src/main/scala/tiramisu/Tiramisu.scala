@@ -54,6 +54,12 @@ trait Query {
   }
 }
 
+trait IsQueryHasQuery extends Query {
+  protected def innerQuery: Query
+  def sql: String = innerQuery.sql
+  def params: Seq[SqlParameter[_]] = innerQuery.params
+}
+
 object Query {
   def apply(sql: String, params: Seq[SqlParameter[_]]): Query = BaseQuery(sql, params)
 }

@@ -5,6 +5,7 @@ import Scalaz._
 
 package object tiramisu  {
   implicit def toSqlParameter[T](l: T)(implicit pi: ParameterInjector[T]): SqlParameter[T] = SqlParameter(l)
+  implicit def optionToSqlParameter[T](l: Option[T])(implicit pi: ParameterInjector[T]): OptionalSqlParameter[T] = OptionalSqlParameter(l)
 
   implicit def queryIsMonoid: Monoid[Query] = new Monoid[Query] { //Logs can be concatenated
     def append(q1: Query, q2: => Query): Query = q1 + q2

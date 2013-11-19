@@ -16,6 +16,11 @@ case class SqlParameter[T](value: T)(implicit injector: ParameterInjector[T]) ex
   def sql: String = " ? "
 }
 
+case class OptionalSqlParameter[T](value: Option[T])(implicit injector: ParameterInjector[T]) extends IsQueryHasQuery {
+  def sqlV: Query = this // Used so that x.param will translate to
+  protected def innerQuery = value.map( v => "?".sqlP(v)).getOrElse("NULL".sqlP())
+}
+
 object ParameterInjectors {
   implicit object LongInjector extends ParameterInjector[Long] {
     def setParam(position: Int, value: Long, statement: PreparedStatement) = statement.setLong(position, value)

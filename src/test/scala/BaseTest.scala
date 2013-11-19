@@ -136,4 +136,10 @@ object QueryDatabaseSpecification extends Properties("Query.Database") {
     val contentType = rs.getEnum(2, classManifest[ContentType])
     (content == uuid) && (contentType == ContentTypes.Json)
   })}
+
+  property("option types work") = forAll(legitimateString) { (a: String) => withConnection(implicit conn => {
+    val uuid = java.util.UUID.randomUUID().toString
+    val query = "INSERT INTO foo (num) VALUES (".sqlP() + Some(5).sqlV + ")".sqlP()
+    true
+  })}
 }
