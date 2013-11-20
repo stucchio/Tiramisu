@@ -8,7 +8,7 @@ object ApplicationBuild extends Build {
     organization := "com.chrisstucchio",
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     scalaVersion := "2.10.0",
-    version := "0.16rc4",
+    version := "0.16rc5",
     resolvers ++= myResolvers,
     name := "tiramisu",
     //fork := true,
