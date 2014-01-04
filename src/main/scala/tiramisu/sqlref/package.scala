@@ -11,4 +11,8 @@ package object sqlref  {
 
   implicit def polymorphicRef[T](ref: T)(implicit pmrt: PolymorphicRefType[T]) = new PolymorphicRef[T](ref, pmrt)
   implicit def singleTablePolymorphicRef[T](ref: T)(implicit pmrt: PolymorphicSingleTableRefType[T]) = new SingleTablePolymorphicRef[T](ref, pmrt)
+
+  implicit class AllRefsWrapper[B](val b: B) extends AnyVal {
+    def allRefs[T](implicit car: ConstructsAllRefs[B,T]) = car.allRefs(b)
+  }
 }
