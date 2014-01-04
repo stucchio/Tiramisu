@@ -8,7 +8,7 @@ object ApplicationBuild extends Build {
     organization := "com.chrisstucchio",
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     scalaVersion := "2.10.0",
-    version := "0.17",
+    version := "0.18",
     resolvers ++= myResolvers,
     name := "tiramisu",
     //fork := true,
@@ -17,7 +17,6 @@ object ApplicationBuild extends Build {
       "org.joda" % "joda-convert" % "1.1",
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
       "postgresql" % "postgresql" % "9.1-901.jdbc4" % "test"
-/*      "com.jolbox" % "bonecp" % "0.7.1.RELEASE" % "test"*/
     ),
     publishTo := Some(Resolver.file("file",  new File( "/tmp/tiramisu-publish" )) )
   )

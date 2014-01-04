@@ -14,35 +14,7 @@ Tiramisu is a small library for constructing prepared SQL statements in an intui
     val query = """SELECT * FROM user_profiles
                         WHERE user_id = (SELECT id FROM users WHERE user_token = """.sqlP() + userToken.sqlV + ");".sqlP()
 
-This format is handy for programmatically creating complex queries based on input of polymorphic type. Consider the following reference type:
-
-    trait UserIdent
-    case class UserIdentByEmail(email: String) extends UserIdent
-    case class UserIdentByTwitter(twitterId: Long) extends UserIdent
-
-It would be desirable to be able to write a function of the form:
-
-    def getUserProfile(userIdent: UserIdent): UserProfile
-
-With straight JDBC it would be tricky:
-
-    def getUserProfile(userIdent: UserIdent) = userIdent match {
-      case UserIdentByEmail(email) => { ...create a query here.. }
-      case UserIdentByEmail(email) => { ...same code, with only one clause changed... }
-    }
-
-Using Tiramisu we can simplify this significantly:
-
-    def userIdClause(userIdent: UserIdent) = userIdent match {
-      case UserIdentByEmail(email) => "(SELECT id FROM users WHERE email = ?)".sqlP(email)
-      case UserIdentByTwitter(twitterId) => "(SELECT id FROM users WHERE twitter_id = ?)".sqlP(twitterId)
-    }
-
-    def getUserProfile(userIdent: UserIdent) = {
-      val query = "SELECT * FROM user_profiles WHERE user_id = ".sqlP() + userIdClause(userIdent)
-    }
-
-The method `userIdClause` can be used elsewhere uniformly.
+This format is handy for programmatically creating complex queries. See the section on Polymorphic References for an example of where this comes in very handy.
 
 SQL injection errors are caused by the fact that prepared statements are complex to write, and string concatenation is easy. The purpose of Tiramisu is to make prepared statements as easy to write as code which builds SQL by string concatenation.
 
@@ -86,6 +58,97 @@ The method `t.sqlV` will only work if an implicit `ParameterInjector[T]` is pres
 
     object DateInjector extends ParameterInjector[DateTime] {
       def setParam(position: Int, value: DateTime, statement: PreparedStatement) = statement.setTimestamp(position, new Timestamp(value.getMillis))
+    }
+
+## Polymorphic References
+
+The package `com.chrisstucchio.tiramisu.sqlref` provides support for Polymorphic Reference types. A polymorphic reference is a product type which uniquely identifies a row in a SQL table. For example, consider the table:
+
+    CREATE TABLE sites (
+      id BIGINT PRIMARY KEY NOT NULL,
+      domain VARCHAR(256) NOT NULL UNIQUE,
+      uuid UUID NOT NULL UNIQUE
+    )
+
+The polymorphic ref type in scala might look like this:
+
+    sealed trait SiteRef
+    case class SiteRefByDomain(domain: String) extends SiteRef
+    case class SiteRefByUUID(uuid: UUID) extends SiteRef
+
+The polymorphic ref typeclass would then be:
+
+    object SiteRefPolymorphicRefType[SiteRef] {
+      val table = SqlTable("sites", "id")
+      def pkClause(ref: SiteRef): Query = ref match {
+        case SiteRefByDomain(domain) => "(SELECT id FROM sites WHERE domain=?)".sqlP(domain)
+        case SiteRefByUUID(uuid) => "(SELECT id FROM sites WHERE uuid=?)".sqlP(uuid)
+      }
+    }
+
+You can then use this typeclass as follows:
+
+    val query = "SELECT * FROM content WHERE content.site_id = ".sqlP() + siteRef.pk
+
+The val `siteRef` can be either a `SiteRefByDomain` or a `SiteRefByUUID`. The generate SQL will then be:
+
+    "SELECT * FROM content WHERE content.site_id = (SELECT id FROM sites WHERE domain=?)"
+
+or
+
+    "SELECT * FROM content WHERE content.site_id = (SELECT id FROM sites WHERE uuid=?)"
+
+### Caching based on Polymorphic References
+
+It might be suggested that polymorphic references are a problem for caching, and this suggestion is correct. However, this problem can be solved for functions which return a complete object, i.e. an object from which all polymorphic references can be constructed. We have a typeclass which handles this:
+
+    trait ConstructsAllRefs[B,T] {
+      def allRefs(b: B): Seq[R]
+    }
+
+Given this typeclass, we have a set of helper traits which can be mixed into any cache. The first trait is the `CacheStore[K,V]` which handles the details of putting objects *into* the cache:
+
+    trait CacheStore[K,V] {
+      protected def putInternal(k: K, v: V)
+      def put(k: K, v: V): Unit = putInternal(k,v)
+      def invalidate(k: K): Unit
+    }
+
+Note the absence of a get method.
+
+For caches of complete rows, we then have the `FullRowSqlCache`:
+
+    trait FullRowSqlCache[K,V] extends CacheStore[K,V] {
+      protected val refConstructor: ConstructsAllRefs[V,K]
+
+      def putObj(v: V): Unit = refConstructor.allRefs(v).foreach(k => putInternal(k,v))
+      def invalidateObj(v: V): Unit = refConstructor.allRefs(v).foreach(invalidate)
+    }
+
+If you provide this trait a `ConstructsAllRefs[V,K]` instance in addition to the standard `CacheStore` methods, then you have the power to invalidate all references for the object.
+
+Finally, there are traits which handle retrieving objects *from* the cache. The simplest is `SqlCache`, which provides the method `get(k: K): Option[V]`. A more interesting one is `SqlFunctorCache`:
+
+    trait SqlFunctorCache[M[_],K,V] extends CacheStore[K,V] {
+      protected implicit val mFunctor: Functor[M]
+
+      def get(k: K): Option[M[V]]
+      def getCertain(k: K)(fallback: =>M[V]): M[V] = {
+        get(k).getOrElse({
+          val result: M[V] = fallback
+          result.map( r => put(k,r) )
+          result
+        })
+      }
+    }
+
+This is useful for retrieval methods which are wrapped in a functor. The standard example of this is a cache which returns a `Future`, rather than a value:
+
+    trait SqlFutureCache[K,V] extends SqlFunctorCache[Future,K,V] {
+      protected implicit val executionContext: ExecutionContext
+      protected implicit object mFunctor extends Functor[Future] {
+        def map[A, B](fa: Future[A])(f: A => B): Future[B] = fa.map(f)
+      }
     }
 
 ## Other utilities
