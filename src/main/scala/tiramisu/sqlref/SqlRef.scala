@@ -1,6 +1,7 @@
 package com.chrisstucchio.tiramisu.sqlref
 
 import com.chrisstucchio.tiramisu._
+import scalaz._
 
 case class SqlTable(tableName: String, pkFieldName: String = "id")
 
@@ -14,7 +15,7 @@ trait PolymorphicSingleTableRefType[T] extends PolymorphicRefType[T] {
   def pkClause(ref: T): Query = ("(SELECT " + table.pkFieldName + " FROM " + table.tableName + " WHERE ").sqlP() + rowIdentifyingClause(ref) + ")".sqlP()
 }
 
-trait ConstructsAllRefs[B,R] {
+trait ConstructsAllRefs[-B,R] {
   // Represents a class which can be used to construct ALL references to the same object.
   //
   // For example, consider a table foo. The class FooFull(pk: Long, slug: String) represents a full row from this table.
@@ -22,6 +23,7 @@ trait ConstructsAllRefs[B,R] {
   //
   // A ConstructsAllRefs[B,T] object would satisfy:
   //    allRefs(fooFull) == Seq(FooRefByLong(fooFull.pk), FooRefBySlug(fooFull.slug))
-  def allRefs(b: B): Seq[R]
-  def references(b: B, r: R): Boolean = allRefs(b).contains(r)
+  def allRefs(b: B): NonEmptyList[R]
+  def references(b: B, r: R): Boolean = allRefs(b).list.contains(r)
+  def primaryRef(b: B): R = allRefs(b).head
 }

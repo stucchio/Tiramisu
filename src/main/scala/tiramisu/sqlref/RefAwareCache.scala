@@ -12,10 +12,10 @@ trait CacheStore[K,V] {
   def invalidate(k: K): Unit
 }
 
-trait FullRowSqlCache[K,V, VP >: V] extends CacheStore[K,V] {
+trait FullRowSqlCache[K,V] extends CacheStore[K,V] {
   // Given the ability to construct all references from an object
   // we can now populate all cache keys rather than just a single one.
-  protected val refConstructor: ConstructsAllRefs[VP,K]
+  protected val refConstructor: ConstructsAllRefs[V,K]
 
   def putObj(v: V): Unit = refConstructor.allRefs(v).foreach(k => putInternal(k,v))
   override def put(k: K, v: V): Unit = putObj(v)

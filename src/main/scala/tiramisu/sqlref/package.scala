@@ -14,6 +14,7 @@ package object sqlref  {
 
   implicit class AllRefsWrapper[B](val b: B) extends AnyVal {
     def allRefs[R](implicit car: ConstructsAllRefs[B,R]) = car.allRefs(b)
-    def referencedBy[R](r: R)(implicit car: ConstructsAllRefs[B,R]) = car.references(b,r)
+    def referencedBy[R, RP >: R](r: R)(implicit car: ConstructsAllRefs[B,RP]) = car.references(b,r)
+    def ref[R](implicit car: ConstructsAllRefs[B,R]) = car.primaryRef(b)
   }
 }

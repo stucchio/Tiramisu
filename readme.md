@@ -102,9 +102,11 @@ or
 
 It might be suggested that polymorphic references are a problem for caching, and this suggestion is correct. However, this problem can be solved for functions which return a complete object, i.e. an object from which all polymorphic references can be constructed. We have a typeclass which handles this:
 
-    trait ConstructsAllRefs[B,T] {
-      def allRefs(b: B): Seq[R]
+    trait ConstructsAllRefs[-B,R] {
+      def allRefs(b: B): NonEmptyList[R]
     }
+
+The `allRefs` function returns a `NonEmptyList` because it doesn't make sense for an object to have no reference.
 
 Given this typeclass, we have a set of helper traits which can be mixed into any cache. The first trait is the `CacheStore[K,V]` which handles the details of putting objects *into* the cache:
 
@@ -118,14 +120,14 @@ Note the absence of a get method.
 
 For caches of complete rows, we then have the `FullRowSqlCache`:
 
-    trait FullRowSqlCache[K,V, VP >: V] extends CacheStore[K,V] {
+    trait FullRowSqlCache[K,V] extends CacheStore[K,V] {
       protected val refConstructor: ConstructsAllRefs[VP,K]
 
       def putObj(v: V): Unit = refConstructor.allRefs(v).foreach(k => putInternal(k,v))
       def invalidateObj(v: V): Unit = refConstructor.allRefs(v).foreach(invalidate)
     }
 
-If you provide this trait a `ConstructsAllRefs[V,K]` instance in addition to the standard `CacheStore` methods, then you have the power to invalidate all references for the object. The odd type signature is there simply to allow the `refConstructor` to handle a type more general than `V`. For example, you might build a `ConstructsAllRefs` instance for `VP =:= PersonLike`, but build separate caches for `V =:= PersonFull`, `V =:= PersonWithPosessions`, etc.
+If you provide this trait a `ConstructsAllRefs[V,K]` instance in addition to the standard `CacheStore` methods, then you have the power to invalidate all references for the object.
 
 Finally, there are traits which handle retrieving objects *from* the cache. The simplest is `SqlCache`, which provides the method `get(k: K): Option[V]`. A more interesting one is `SqlFunctorCache`:
 
