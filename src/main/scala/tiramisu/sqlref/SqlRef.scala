@@ -23,4 +23,5 @@ trait ConstructsAllRefs[B,R] {
   // A ConstructsAllRefs[B,T] object would satisfy:
   //    allRefs(fooFull) == Seq(FooRefByLong(fooFull.pk), FooRefBySlug(fooFull.slug))
   def allRefs(b: B): Seq[R]
+  def references(b: B, r: R): Boolean = allRefs(b).contains(r)
 }

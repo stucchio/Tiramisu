@@ -118,14 +118,14 @@ Note the absence of a get method.
 
 For caches of complete rows, we then have the `FullRowSqlCache`:
 
-    trait FullRowSqlCache[K,V] extends CacheStore[K,V] {
-      protected val refConstructor: ConstructsAllRefs[V,K]
+    trait FullRowSqlCache[K,V, VP >: V] extends CacheStore[K,V] {
+      protected val refConstructor: ConstructsAllRefs[VP,K]
 
       def putObj(v: V): Unit = refConstructor.allRefs(v).foreach(k => putInternal(k,v))
       def invalidateObj(v: V): Unit = refConstructor.allRefs(v).foreach(invalidate)
     }
 
-If you provide this trait a `ConstructsAllRefs[V,K]` instance in addition to the standard `CacheStore` methods, then you have the power to invalidate all references for the object.
+If you provide this trait a `ConstructsAllRefs[V,K]` instance in addition to the standard `CacheStore` methods, then you have the power to invalidate all references for the object. The odd type signature is there simply to allow the `refConstructor` to handle a type more general than `V`. For example, you might build a `ConstructsAllRefs` instance for `VP =:= PersonLike`, but build separate caches for `V =:= PersonFull`, `V =:= PersonWithPosessions`, etc.
 
 Finally, there are traits which handle retrieving objects *from* the cache. The simplest is `SqlCache`, which provides the method `get(k: K): Option[V]`. A more interesting one is `SqlFunctorCache`:
 
