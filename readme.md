@@ -5,7 +5,7 @@
 Add this to your build.scala file:
 
     resolvers ++= "chrisstucchio" at "http://maven.chrisstucchio.com/",
-    libraryDependencies ++= "com.chrisstucchio" %% "tiramisu" % "0.15"
+    libraryDependencies ++= "com.chrisstucchio" %% "tiramisu" % "0.19"
 
 ## Usage
 
