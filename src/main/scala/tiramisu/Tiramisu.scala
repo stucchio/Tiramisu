@@ -10,6 +10,8 @@ class DuplicatedParameterException(e: String) extends TiramisuException(e)
 class InvalidParameterException(e: String) extends TiramisuException(e)
 class UnusedParameterException(e: String) extends TiramisuException(e)
 
+case class InsertResult(rowsInserted: Int, keyInserted: Option[Long])
+
 trait Query {
   def sql: String
   def params: Seq[SqlParameter[_]]
@@ -38,9 +40,26 @@ trait Query {
     ps
   }
 
+  def addParamsToStatement(ps: PreparedStatement): PreparedStatement = {
+    params.zipWithIndex.foreach( x => x._1.setParam(x._2+1, ps) )
+    ps
+  }
+
   def executeUpdate(implicit conn: Connection): Int = {
     val ps = prepareStatement(conn)
     ps.executeUpdate()
+  }
+
+  def executeInsertReturnPK(implicit conn: Connection): InsertResult = {
+    val ps = addParamsToStatement(conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS))
+    val rowsInserted = ps.executeUpdate()
+    val rs = ps.getGeneratedKeys()
+    if (rs.next()) {
+      val keyInserted = rs.getLong(1)
+      InsertResult(rowsInserted, Some(keyInserted))
+    } else {
+      InsertResult(rowsInserted, None)
+    }
   }
 
   def executeQuery(implicit conn: Connection): ResultSet = {
