@@ -9,7 +9,7 @@ object ApplicationBuild extends Build {
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     scalaVersion := "2.11.6",
     crossScalaVersions := Seq("2.11.6"),
-    version := "0.19.2",
+    version := "0.19.3",
     resolvers ++= myResolvers,
     name := "tiramisu",
     //fork := true,
