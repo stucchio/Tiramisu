@@ -14,6 +14,7 @@ case class SqlParameter[T](value: T)(implicit injector: ParameterInjector[T]) ex
 
   def params: Seq[SqlParameter[_]] = Seq(this)
   def sql: String = " ? "
+  override def toString() = "SqlParameter(" + value + ")"
 }
 
 case class OptionalSqlParameter[T](value: Option[T])(implicit injector: ParameterInjector[T]) extends IsQueryHasQuery {
