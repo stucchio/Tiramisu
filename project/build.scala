@@ -7,18 +7,18 @@ object ApplicationBuild extends Build {
   lazy val commonSettings = Defaults.defaultSettings ++ Seq(
     organization := "com.chrisstucchio",
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
-    scalaVersion := "2.11.6",
-    crossScalaVersions := Seq("2.11.6"),
+    scalaVersion := "2.12.0",
+    crossScalaVersions := Seq("2.11.6", "2.12.0"),
     version := "0.19.3",
     resolvers ++= myResolvers,
     name := "tiramisu",
     //fork := true,
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-core" % "7.1.2",
-      "joda-time" % "joda-time" % "2.0",
+      "org.scalaz" %% "scalaz-core" % "7.2.7",
+      "joda-time" % "joda-time" % "2.9.6",
       "org.joda" % "joda-convert" % "1.1",
-      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
-      "postgresql" % "postgresql" % "9.1-901.jdbc4" % "test"
+      "org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
+      "org.postgresql" % "postgresql" % "9.4.1212.jre7" % "test"
     ),
     publishTo := Some(Resolver.file("file",  new File( "/tmp/tiramisu-publish" )) )
   )
