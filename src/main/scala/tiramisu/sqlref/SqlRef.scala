@@ -24,6 +24,6 @@ trait ConstructsAllRefs[-B,R] {
   // A ConstructsAllRefs[B,T] object would satisfy:
   //    allRefs(fooFull) == Seq(FooRefByLong(fooFull.pk), FooRefBySlug(fooFull.slug))
   def allRefs(b: B): NonEmptyList[R]
-  def references(b: B, r: R): Boolean = allRefs(b).list.contains(r)
+  def references(b: B, r: R): Boolean = allRefs(b).list.find(ref => ref == r).fold(false)(_ => true)
   def primaryRef(b: B): R = allRefs(b).head
 }

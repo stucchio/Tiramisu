@@ -1,5 +1,7 @@
 import org.scalacheck._
 
+import org.joda.time._
+
 import scalaz._
 import Scalaz._
 
@@ -57,6 +59,18 @@ object QuerySpecification extends Properties("Query.Specification") {
 /*
 To run this you need a database as follows.
 
+CREATE DATABASE bayesianwitch;
+
+\c bayesianwitch;
+
+CREATE ROLE bayesianwitch WITH LOGIN PASSWORD 'FOSTdsPjuAiqA';
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO bayesianwitch;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TYPE content_type AS ENUM ('text/javascript', 'text/html', 'application/json');
+
 CREATE TABLE clients (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
@@ -65,11 +79,20 @@ CREATE TABLE clients (
     CONSTRAINT client_uuid_is_unique UNIQUE(uuid)
 );
 
+CREATE TABLE foo (
+    num BIGSERIAL
+);
+
 CREATE TABLE content (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     content_type content_type NOT NULL,
     content TEXT NOT NULL
 );
+
+CREATE TABLE dates (
+    value date
+);
+
  */
 
 
@@ -77,7 +100,7 @@ object QueryDatabaseSpecification extends Properties("Query.Database") {
   Class.forName("org.postgresql.Driver")
 
   def withConnection[T](f: Connection => T) = {
-    val url = "jdbc:postgresql://localhost:6432/bayesianwitch"
+    val url = "jdbc:postgresql://localhost:5432/bayesianwitch"
     val props = new java.util.Properties()
     props.setProperty("user", "bayesianwitch")
     props.setProperty("password", "FOSTdsPjuAiqA")
@@ -142,4 +165,12 @@ object QueryDatabaseSpecification extends Properties("Query.Database") {
     val query = "INSERT INTO foo (num) VALUES (".sqlP() + Some(5).sqlV + ")".sqlP()
     true
   })}
+
+  property("date type work") = forAll(legitimateString) { (a: String) => withConnection(implicit conn => {
+    val currentDate = DateTime.now()
+    val query = "INSERT INTO dates (value) VALUES (?)".sqlP(currentDate)
+    query.executeUpdate
+    true
+  })}
+
 }
